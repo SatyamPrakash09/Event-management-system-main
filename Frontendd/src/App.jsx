@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import './index.css'
 import Footer from "./components/mvpblocks/footer-standard";
 import Header2 from "./components/mvpblocks/header-2"
@@ -17,6 +18,17 @@ import CreateEvent from './pages/dashboard/CreateEvent';
 import AdminDashboard from './pages/dashboard/AdminDashboard';
 import ThankYou from './pages/ThankYou';
 import { useAuth } from './context/AuthContext';
+
+// Scroll to top on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -45,6 +57,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 const App = () => {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <div className="min-h-screen flex flex-col">
         {/* Header */}
         <Header2 />
