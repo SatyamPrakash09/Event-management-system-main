@@ -182,6 +182,7 @@ jobs:
           find dist/assets -name "*.js" -exec du -sh {} \; 2>/dev/null | sort -rh | head -5
           echo ""
   e2e-tests:
+    timeout-minutes: 10
     name: "🎭 Playwright E2E Tests"
     runs-on: ubuntu-latest
 

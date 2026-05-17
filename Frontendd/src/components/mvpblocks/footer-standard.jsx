@@ -243,7 +243,7 @@ export default function FooterStandard() {
 
           <div className="flex items-center gap-4">
 
-            {data().bottomLinks.map(({ href, label }) => (
+            {data.bottomLinks.map(({ href, label }) => (
               <a
                 key={label}
                 href={href}
