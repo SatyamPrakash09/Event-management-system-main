@@ -213,16 +213,17 @@ export default function FooterStandard() {
                 <ul className="space-y-2">
                   {data().navigation[section].map((item) => (
                     <li key={item.name}>
-                      <Link
-                        to={item.href}
-                        onClick={(e) => {
-                          if (section === 'legal') {
-                            handleLegalClick(e, item.href);
-                          }
-                        }}
-                        className="text-xs text-slate-600 hover:text-rose-600 transition-colors cursor-pointer">
-                        {item.name}
-                      </Link>
+                    <Link
+  to={item.href}
+  onClick={(e) => {
+    if (section === "legal") {
+      handleLegalClick(e, item.href);
+    }
+  }}
+  className="text-xs text-slate-600 hover:text-rose-600 transition-colors cursor-pointer"
+>
+  {item.name}
+</Link>
                     </li>
                   ))}
                 </ul>
