@@ -577,15 +577,11 @@ const pastEvents = [
                                 ) : (
                                     <div className="grid grid-cols-1 gap-6">
                                         {availableEvents.map((evt, idx) => {
-<<<<<<< HEAD
-                                            const isRegistered = registrations.some(r => r.status==="registered" && r.event?._id === evt._id);
-=======
                                             const isRegistered = registrations.some(r => r.event?._id === evt._id);
                                             let isEventFullBooked = false;
                                             if (evt.registeredCount === evt.capacity) {
                                                 isEventFullBooked = true;
                                             }
->>>>>>> upstream/main
                                             return (
                                                 <motion.div
                                                     key={evt._id}
