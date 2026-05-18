@@ -16,6 +16,7 @@ import About from "./pages/About";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import ForgotPassword from "./pages/ForgotPassword";
+import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import DashboardLayout from "./components/DashboardLayout";
 import CustomerDashboard from "./pages/dashboard/CustomerDashboard";
@@ -120,8 +121,8 @@ const App = () => {
               }
             />
 
-            {/* Fallback to Home or 404 */}
-            <Route path="*" element={<Home />} />
+            {/* Fallback to 404 */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />
