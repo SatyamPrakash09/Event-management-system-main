@@ -190,16 +190,16 @@ const fetchAvailableEvents = async () => {
   // useEffect
   // =========================
   useEffect(() => {
+  const loadData = async () => {
     if (activeTab === "Browse Events") {
-      fetchAvailableEvents();
+      await fetchAvailableEvents();
     } else {
-      fetchRegistrations();
+      await fetchRegistrations();
     }
+  };
 
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [activeTab, fetchAvailableEvents, fetchRegistrations]);
+  loadData();
+}, [activeTab, fetchAvailableEvents, fetchRegistrations]);
 
   // =========================
   // Register
