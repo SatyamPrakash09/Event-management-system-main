@@ -229,6 +229,26 @@ export default function FooterStandard() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Legal Modal */}
+      <LegalModal
+        isOpen={!!activeModal}
+        onClose={() => setActiveModal(null)}
+        title={activeModal ? legalContent[activeModal].title : ""}
+        content={activeModal ? legalContent[activeModal].content : ""}
+      />
+
+      {/* Animation Styles */}
+      <style>{`
+        .animate-rotate-3d {
+          animation: rotate3d 8s linear infinite;
+        }
+
+        .animate-energy-flow {
+          animation: energy-flow 4s linear infinite;
+          background-size: 200% 100%;
+        }
 
         {/* Legal Modal */}
         <LegalModal
