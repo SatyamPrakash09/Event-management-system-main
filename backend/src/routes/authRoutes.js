@@ -4,7 +4,9 @@ import {
   signup,
   login,
   me,
-  updateProfile
+  updateProfile,
+  logout,
+  refresh
 } from '../controllers/authController.js';
 
 import { authenticate } from '../middleware/auth.js';
@@ -33,6 +35,9 @@ router.post(
   validate,
   login
 );
+
+router.post('/logout', logout);
+router.post('/refresh', refresh);
 
 // User Routes
 router.get('/me', authenticate, me);

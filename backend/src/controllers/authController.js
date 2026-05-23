@@ -1,5 +1,23 @@
 import User from '../models/User.js';
-import { generateJwtToken } from '../utils/generateToken.js';
+import { generateAccessToken, generateRefreshToken, parseDurationToMs } from '../utils/generateToken.js';
+import jwt from 'jsonwebtoken';
+import { env } from '../config/env.js';
+
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: parseDurationToMs(env.accessTokenExpiresIn || '15m'),
+  path: '/'
+});
+
+const getRefreshCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  maxAge: parseDurationToMs(env.refreshTokenExpiresIn || '7d'),
+  path: '/'
+});
 
 const handleAuthError = (res, err) => {
   console.error('ERROR:', err);
@@ -29,9 +47,22 @@ export const signup = async (req, res) => {
     const { name, email, password, role } = req.body;
     const existing = await User.findOne({ email });
     if (existing) return res.status(400).json({ message: 'Email already in use' });
+    
     const user = await User.create({ name, email, password, role });
-    const token = generateJwtToken({ id: user._id, role: user.role, name: user.name });
-    res.status(201).json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    
+    const accessToken = generateAccessToken({ id: user._id, role: user.role, name: user.name });
+    const refreshToken = generateRefreshToken({ id: user._id });
+    
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie('authToken', accessToken, getCookieOptions());
+    res.cookie('refreshToken', refreshToken, getRefreshCookieOptions());
+
+    res.status(201).json({ 
+      token: accessToken, 
+      user: { id: user._id, name: user.name, email: user.email, role: user.role } 
+    });
   } catch (err) {
     return handleAuthError(res, err);
   }
@@ -45,8 +76,86 @@ export const login = async (req, res) => {
     if (user.isBlocked) return res.status(403).json({ message: 'User is blocked' });
     const valid = await user.comparePassword(password);
     if (!valid) return res.status(400).json({ message: 'Invalid credentials' });
-    const token = generateJwtToken({ id: user._id, role: user.role, name: user.name });
-    res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
+    
+    const accessToken = generateAccessToken({ id: user._id, role: user.role, name: user.name });
+    const refreshToken = generateRefreshToken({ id: user._id });
+    
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie('authToken', accessToken, getCookieOptions());
+    res.cookie('refreshToken', refreshToken, getRefreshCookieOptions());
+
+    res.json({ 
+      token: accessToken, 
+      user: { id: user._id, name: user.name, email: user.email, role: user.role } 
+    });
+  } catch (err) {
+    return handleAuthError(res, err);
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    const refreshToken = req.cookies ? req.cookies.refreshToken : null;
+    if (refreshToken) {
+      await User.findOneAndUpdate(
+        { refreshToken },
+        { $unset: { refreshToken: 1 } }
+      );
+    }
+
+    res.clearCookie('authToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/'
+    });
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/'
+    });
+
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (err) {
+    return handleAuthError(res, err);
+  }
+};
+
+export const refresh = async (req, res) => {
+  try {
+    const refreshToken = req.cookies ? req.cookies.refreshToken : null;
+    if (!refreshToken) {
+      return res.status(401).json({ message: 'Refresh token missing' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(refreshToken, env.jwtSecret || 'testsecret');
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+
+    const user = await User.findById(decoded.id).select('+refreshToken');
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ message: 'Token is invalid or has been revoked' });
+    }
+
+    const newAccessToken = generateAccessToken({ id: user._id, role: user.role, name: user.name });
+    const newRefreshToken = generateRefreshToken({ id: user._id });
+    
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    res.cookie('authToken', newAccessToken, getCookieOptions());
+    res.cookie('refreshToken', newRefreshToken, getRefreshCookieOptions());
+
+    res.json({
+      success: true,
+      token: newAccessToken
+    });
   } catch (err) {
     return handleAuthError(res, err);
   }
@@ -71,7 +180,6 @@ export const updateProfile = async (req, res) => {
     if (phoneNumber) updates.phoneNumber = phoneNumber;
     if (avatarUrl) updates.avatarUrl = avatarUrl;
 
-    // Prevent duplicate email if email is being changed
     if (email) {
       const existing = await User.findOne({ email });
       if (existing && existing._id.toString() !== req.user.id) {
