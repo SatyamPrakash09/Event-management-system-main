@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, ChevronRight, Github, Lock, Search } from 'lucide-react';
 import { Button } from '../ui/button.jsx';
 import { Link } from 'react-router-dom';
 
-export default function GradientHero() {
-  const placeholders = useMemo(() => [
-    "Search for events...",
-    "Search for communities...",
-    "Search for organizers..."
-  ], []);
+const PLACEHOLDERS = [
+  "Search for events...",
+  "Search for communities...",
+  "Search for organizers...",
+];
 
+export default function GradientHero() {
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPlaceholderIndex((prev) => (prev + 1) % placeholders.length);
+      setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDERS.length);
     }, 3000);
     return () => clearInterval(interval);
-  }, [placeholders]);
+  }, []);
 
   return (
 
@@ -89,7 +89,7 @@ export default function GradientHero() {
                         transition={{ duration: 0.3 }}
                         className="text-muted-foreground text-base"
                       >
-                        {placeholders[placeholderIndex]}
+                        {PLACEHOLDERS[placeholderIndex]}
                       </motion.span>
                     </AnimatePresence>
                   </div>
