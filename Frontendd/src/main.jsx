@@ -5,11 +5,18 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import { SocketProvider } from "./context/SocketContext";
-import { registerSW } from 'virtual:pwa-register';
+import { API_BASE_URL } from "./config";
 
-// Register the PWA service worker
-registerSW({ immediate: true });
+// Global fetch interceptor to automatically include credentials (cookies) for all API requests
+const originalFetch = window.fetch;
+window.fetch = async (input, init) => {
+  const url = typeof input === 'string' ? input : (input ? input.url : null);
+  if (url && (url.startsWith(API_BASE_URL) || url.includes('/api/'))) {
+    init = init || {};
+    init.credentials = 'include';
+  }
+  return originalFetch(input, init);
+};
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
