@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
     interests: [{ type: String }],
     avatarUrl: { type: String },
     phoneNumber: { type: String, trim: true },
+    refreshToken: { type: String, select: false },
   },
   { timestamps: true }
 );
