@@ -8,17 +8,25 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
     const mountedRef = useRef(true);
 
-    const fetchUser = async (token) => {
+    const fetchUser = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
+            let response = await fetch(`${API_BASE_URL}/api/auth/me`);
+            
+            // If unauthorized, attempt silent refresh using refresh token cookie
+            if (response.status === 401) {
+                const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+                    method: 'POST'
+                });
+                
+                if (refreshResponse.ok) {
+                    response = await fetch(`${API_BASE_URL}/api/auth/me`);
                 }
-            });
+            }
+
             if (response.ok && mountedRef.current) {
                 const userData = await response.json();
                 setUser(userData.user);
-            } else if (!response.ok) {
+            } else {
                 localStorage.removeItem('token');
                 if (mountedRef.current) {
                     setUser(null);
@@ -41,14 +49,8 @@ export const AuthProvider = ({ children }) => {
         let mounted = true;
 
         const initializeUser = async () => {
-            const token = localStorage.getItem('token');
-            if (token) {
-                await fetchUser(token);
-            } else {
-                if (mounted) {
-                    setLoading(false);
-                }
-            }
+            // Hit fetchUser directly - cookies are sent automatically
+            await fetchUser();
         };
 
         initializeUser();
@@ -64,18 +66,21 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
     };
 
-    const logout = (navigate) => {
+    const logout = async (navigate) => {
+        try {
+            await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST' });
+        } catch (err) {
+            console.error('Failed to logout on server', err);
+        }
         localStorage.removeItem('token');
         setUser(null);
         if (navigate) {
-        navigate('/');
+            navigate('/');
         } else {
-        window.location.href = '/';
+            window.location.href = '/';
         }
     };
 
-    // Always render children, pass loading state through context
-    // This prevents the app from being stuck on loading screen
     return (
         <AuthContext.Provider value={{ user, login, logout, loading, setUser }}>
             {children}
@@ -84,4 +89,3 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => useContext(AuthContext);
-
